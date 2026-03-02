@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>A Special Journey ✨</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        @font-face { font-family: 'Satoshi'; src: url('https://api.fontshare.com/v2/css?f[]=satoshi@400,700&display=swap'); }
+        :root { --primary: #f43f5e; --gold: #fbbf24; --bg-dark: #0c0a09; }
+        body { margin: 0; background-color: var(--bg-dark); color: #f8fafc; font-family: 'Satoshi', sans-serif; overflow: hidden; height: 100dvh; width: 100vw; position: fixed; }
+        #aurora-bg { position: fixed; inset: 0; z-index: -2; background: #0c0a09; }
+        .aurora-layer { position: absolute; width: 150%; height: 150%; filter: blur(80px); opacity: 0.3; mix-blend-mode: screen; animation: drift 25s infinite alternate; }
+        @keyframes drift { from { transform: rotate(0deg) scale(1); } to { transform: rotate(12deg) scale(1.1); } }
+        .timer-box { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 12px; min-width: 65px; backdrop-filter: blur(10px); }
+        .timer-val { font-size: 1.4rem; font-weight: 700; color: var(--gold); display: block; line-height: 1; }
+        .timer-label { font-size: 0.6rem; text-transform: uppercase; opacity: 0.5; letter-spacing: 0.05em; margin-top: 4px; }
+        .glass-card { background: rgba(15, 12, 11, 0.85); backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 28px; display: none; box-shadow: 0 40px 80px rgba(0,0,0,0.8); width: 92%; max-width: 450px; padding: 2.5rem 1.5rem; }
+        .text-gradient { background: linear-gradient(to right, #fff, #ffb6c1, #fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-family: 'Playfair Display', serif; }
+        .btn-primary { background: linear-gradient(135deg, #f43f5e, #be123c); box-shadow: 0 10px 25px rgba(244, 63, 94, 0.4); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); width: 100%; max-width: 280px; }
+        .btn-locked { background: #222; cursor: not-allowed; opacity: 0.5; border: 1px solid rgba(255,255,255,0.05); color: #777; width: 100%; max-width: 280px; }
+        .polaroid { background: white; padding: 10px 10px 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); transform: rotate(-2deg); margin: 0 auto; max-width: 280px; }
+        .polaroid img { width: 100%; height: 240px; object-fit: cover; background: #eee; }
+        .polaroid-cap { font-family: 'Playfair Display', serif; color: #333; margin-top: 15px; font-size: 1.2rem; }
+        .music-control { position: fixed; bottom: 20px; right: 20px; z-index: 100; cursor: pointer; background: rgba(255,255,255,0.1); padding: 12px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); }
+        .bar { width: 3px; height: 14px; background: var(--primary); display: inline-block; animation: bounce 1s infinite paused; margin: 0 1px; }
+        .playing .bar { animation-play-state: running; }
+        @keyframes bounce { 0%, 100% { transform: scaleY(0.4); } 50% { transform: scaleY(1.2); } }
+    </style>
+</head>
+<body>
+
+    <script>const BIRTHDAY_DATE = "March 3, 2026 00:00:00";</script>
+
+    <audio id="bg-music" loop preload="auto">
+        <source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808f3030c.mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="aurora-bg">
+        <div class="aurora-layer" style="background: radial-gradient(circle, #f43f5e 0%, transparent 60%); top: -10%; left: -10%;"></div>
+        <div class="aurora-layer" style="background: radial-gradient(circle, #fbbf24 0%, transparent 60%); bottom: -10%; right: -10%;"></div>
+    </div>
+
+    <div id="three-container" class="fixed inset-0 z-[-1]"></div>
+
+    <main class="flex items-center justify-center min-h-[100dvh] relative z-10 px-4">
+        
+        <div id="step-1" class="glass-card text-center" style="display: block;">
+            <h1 class="text-3xl font-bold text-gradient mb-4">Almost Time...</h1>
+            <div id="countdown-wrapper" class="flex justify-center gap-2 mb-8">
+                <div class="timer-box"><span id="days" class="timer-val">00</span><span class="timer-label">Days</span></div>
+                <div class="timer-box"><span id="hours" class="timer-val">00</span><span class="timer-label">Hrs</span></div>
+                <div class="timer-box"><span id="mins" class="timer-val">00</span><span class="timer-label">Min</span></div>
+                <div class="timer-box"><span id="secs" class="timer-val">00</span><span class="timer-label">Sec</span></div>
+            </div>
+            <p id="welcome-msg" class="text-slate-400 mb-8 text-sm">A small world built for you. Unlocks at midnight.</p>
+            <button id="start-btn" onclick="startJourney()" class="btn-locked py-4 rounded-full font-bold text-sm tracking-widest uppercase" disabled>Locked 🔒</button>
+        </div>
+
+        <div id="step-2" class="glass-card text-center">
+            <div class="text-6xl mb-6">🎉</div>
+            <h1 class="text-4xl font-bold text-gradient mb-6">Happy Birthday!</h1>
+            <p class="text-slate-300 mb-8 text-base">You make the world brighter just by existing. I'm so lucky to know you.</p>
+            <button onclick="nextStep(3)" class="btn-primary py-4 rounded-full font-bold text-lg">See more</button>
+        </div>
+
+        <div id="step-3" class="glass-card">
+            <h1 class="text-2xl font-bold text-gradient mb-6 text-center">I Adore You Because...</h1>
+            <div class="space-y-3 mb-8">
+                <div class="bg-white/5 p-4 rounded-xl border border-white/5"><h3 class="text-pink-300 font-bold text-sm">✨ Your Kindness</h3><p class="text-xs text-slate-400">The warmth you show everyone is rare.</p></div>
+                <div class="bg-white/5 p-4 rounded-xl border border-white/5"><h3 class="text-pink-300 font-bold text-sm">😊 That Smile</h3><p class="text-xs text-slate-400">My favorite thing in the world.</p></div>
+                <div class="bg-white/5 p-4 rounded-xl border border-white/5"><h3 class="text-amber-300 font-bold text-sm">🌟 Your Spirit</h3><p class="text-xs text-slate-400">You make everything feel possible.</p></div>
+            </div>
+            <button onclick="nextStep(4)" class="btn-primary py-4 rounded-full font-bold block mx-auto">Remember this?</button>
+        </div>
+
+        <div id="step-4" class="glass-card text-center">
+            <h1 class="text-2xl font-bold text-gradient mb-6">A Favorite Moment I Want To Spend With You</h1>
+            <div class="polaroid mb-8" id="photo-card">
+                <img src="/Users/syednizam/Documents/BDAY/a.png" alt="Memory" id="memory-img" onerror="this.src='https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=300&h=300&fit=crop'">
+                <div class="polaroid-cap">Our favorite time.</div>
+            </div>
+            <button onclick="nextStep(5)" class="btn-primary py-4 rounded-full font-bold">One last thing...</button>
+        </div>
+
+        <div id="step-5" class="glass-card text-center">
+            <div class="text-6xl mb-6">🎂</div>
+            <h1 class="text-3xl font-bold text-gradient mb-4">My Wish For You</h1>
+            <p class="text-slate-300 mb-8 text-sm">May your year be as beautiful as you are.</p>
+            <div id="final-message" class="hidden mb-8 text-2xl font-bold text-pink-400">Happy Birthday, Anjum❤️</div>
+            <button id="celeb-btn" onclick="celebrate()" class="btn-primary py-5 rounded-full font-bold text-xl">Celebrate!</button>
+        </div>
+    </main>
+
+    <div class="music-control" id="music-btn" onclick="toggleMusic()">
+        <div class="flex gap-0.5 items-end h-[14px]"><span class="bar"></span><span class="bar" style="animation-delay: 0.2s"></span><span class="bar" style="animation-delay: 0.4s"></span><span class="bar" style="animation-delay: 0.1s"></span></div>
+    </div>
+
+    <script>
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const target = new Date(BIRTHDAY_DATE).getTime();
+            const diff = target - now;
+            if (diff <= 0) {
+                document.getElementById('countdown-wrapper').innerHTML = "<span class='text-2xl font-bold text-pink-400 animate-pulse'>THE DAY IS HERE! ✨</span>";
+                const btn = document.getElementById('start-btn');
+                btn.classList.remove('btn-locked'); btn.classList.add('btn-primary');
+                btn.innerHTML = "Open Your Surprise 🎁"; btn.disabled = false;
+                document.getElementById('welcome-msg').innerText = "It's March 3rd! Are you ready?";
+                return;
+            }
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24)), h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)), m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)), s = Math.floor((diff % (1000 * 60)) / 1000);
+            document.getElementById('days').innerText = d.toString().padStart(2, '0'); document.getElementById('hours').innerText = h.toString().padStart(2, '0'); document.getElementById('mins').innerText = m.toString().padStart(2, '0'); document.getElementById('secs').innerText = s.toString().padStart(2, '0');
+        }
+        setInterval(updateCountdown, 1000); updateCountdown();
+
+        let currentStep = 1;
+        function startJourney() { document.getElementById('bg-music').play(); document.getElementById('music-btn').classList.add('playing'); nextStep(2); }
+        function nextStep(step) {
+            gsap.to(`#step-${currentStep}`, { opacity: 0, y: -30, scale: 0.9, duration: 0.5, onComplete: () => {
+                document.getElementById(`step-${currentStep}`).style.display = 'none';
+                currentStep = step;
+                const next = document.getElementById(`step-${step}`);
+                next.style.display = 'block';
+                gsap.fromTo(next, { opacity: 0, y: 30, scale: 1.05 }, { opacity: 1, y: 0, scale: 1, duration: 0.7, ease: "back.out(1.4)" });
+            }});
+        }
+        function toggleMusic() {
+            const m = document.getElementById('bg-music');
+            if(m.paused) { m.play(); document.getElementById('music-btn').classList.add('playing'); } else { m.pause(); document.getElementById('music-btn').classList.remove('playing'); }
+        }
+
+        let scene, camera, renderer, hearts = [];
+        function initThree() {
+            scene = new THREE.Scene(); camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true }); renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('three-container').appendChild(renderer.domElement);
+            const heartShape = new THREE.Shape(); heartShape.moveTo(25, 25); heartShape.bezierCurveTo(25, 25, 20, 0, 0, 0); heartShape.bezierCurveTo(-30, 0, -30, 35, -30, 35); heartShape.bezierCurveTo(-30, 55, -10, 77, 25, 95); heartShape.bezierCurveTo(60, 77, 80, 55, 80, 35); heartShape.bezierCurveTo(80, 35, 80, 0, 50, 0); heartShape.bezierCurveTo(35, 0, 25, 25, 25, 25);
+            const geo = new THREE.ExtrudeGeometry(heartShape, { depth: 2, bevelEnabled: true, bevelSize: 1, bevelThickness: 1 }); geo.scale(0.01, 0.01, 0.01); geo.rotateZ(Math.PI);
+            for(let i=0; i<20; i++) {
+                const mat = new THREE.MeshPhongMaterial({ color: 0xf43f5e, shininess: 80, transparent: true, opacity: 0.6 });
+                const heart = new THREE.Mesh(geo, mat); heart.position.set((Math.random()-0.5)*25, (Math.random()-0.5)*25, (Math.random()-0.5)*10); scene.add(heart); hearts.push(heart);
+            }
+            scene.add(new THREE.PointLight(0xffffff, 1).clone().set(10,10,10)); scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+            camera.position.z = 15; animate();
+        }
+        function animate() { requestAnimationFrame(animate); hearts.forEach(h => { h.rotation.y += 0.01; h.position.y += Math.sin(Date.now()*0.001)*0.004; }); renderer.render(scene, camera); }
+        function celebrate() { confetti({ particleCount: 150, spread: 70, origin: { y: 0.7 }, colors: ['#f43f5e', '#fbbf24', '#ffffff'] }); document.getElementById('final-message').classList.remove('hidden'); document.getElementById('celeb-btn').style.display = 'none'; }
+        window.onload = initThree;
+        window.onresize = () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); };
+    </script>
+</body>
+</html>
